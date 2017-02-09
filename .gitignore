@@ -1,0 +1,6 @@
+*.swp
+*.qcow2
+*.iso
+export/
+migration/vm
+migration/export
