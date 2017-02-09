@@ -1,0 +1,6 @@
+[submodule "stegano-toffanvahlkar-allnightlong-2"]
+	path = part-2
+	url = ssh://git@git.ctf.inpt.fr:10022/THC/stegano-toffanvahlkar-allnightlong-2.git
+[submodule "forensic-toffanvahlkar-allnightlong-3"]
+	path = part-3
+	url = ssh://git@git.ctf.inpt.fr:10022/THC/forensic-toffanvahlkar-allnightlong-3.git
