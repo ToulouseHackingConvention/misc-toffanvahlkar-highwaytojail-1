@@ -1,6 +1,7 @@
 *.swp
 *.qcow2
 *.iso
+tmp/
 export/
-migration/vm
-migration/export
+res/rdash-home.tgz
+res/gru-home.tgz
