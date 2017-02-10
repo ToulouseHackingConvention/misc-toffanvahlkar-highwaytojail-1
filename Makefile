@@ -16,104 +16,61 @@ all: export
 
 ###   Files and dependencies.   ################################################
 
-2-stegano/Makefile:
-	git submodule update --init --remote
+tmp/allnightlong-work.qcow2: prepare-disk
 
-3-forensic/Makefile:
-	git submodule update --init --remote
+tmp/qemu.pid: start-vm
 
-tmp/allnightlong-work.qcow2: prepare-vm
+tmp/migration.qemu: migrate
 
-tmp/vm.pid: start-vm
+2-stegano/export/export.tgz: export-stegano
 
-tmp/migration.img: migrate
-
-2-stegano/export/export.tgz: prepare-steg
-
-3-forensic/export/cryptolock: prepare-forensic
+3-forensic/export/cryptolock: export-forensic
 
 
 ###   Rules   ##################################################################
 
-export: prepare-vm start-vm populate-vm prepare-steg prepare-forensic insert-steg clear-vm insert-forensic migrate capture
+export: capture
 
-prepare-vm: res/allnightlong.qcow2
+prepare-disk: res/allnightlong.qcow2 2-stegano/export/export.tgz 3-forensic/export/cryptolock
 	mkdir -p tmp
-	qemu-img create -f qcow2 -b ../res/allnightlong.qcow2 tmp/allnightlong-work.qcow2
+	bin/prepare-disk
 
 start-vm: tmp/allnightlong-work.qcow2
-	sudo -b qemu-system-x86_64 -enable-kvm \
-		-nographic \
-		-machine "pc-i440fx-2.8" \
-		-cpu "qemu64" \
-		-m size=128M \
-		-hda tmp/allnightlong-work.qcow2 \
-		-monitor "tcp:127.0.0.1:${QEMU_MONITOR},server,nowait" \
-		-serial "tcp:127.0.0.1:${QEMU_SERIAL},server,nowait" \
-		-net "nic,model=virtio" \
-		-net "tap,ifname=${IFVIRT},script=res/qemu-ifup.sh,downscript=res/qemu-ifdown.sh"
-	pidof -s qemu-system-x86_64 > tmp/vm.pid
-	sleep 5
+	bin/start-vm
 
-populate-vm: res/rdash-home.tgz tmp/vm.pid
-	tar xvf res/rdash-home.tgz --directory=./tmp
-	scp -F res/ssh_config -r tmp/rdash "rdash@${GUESTIP}:/home/"
-
-prepare-steg: 2-stegano/Makefile
+export-stegano: 2-stegano/Makefile
 	make -C 2-stegano export
 
-prepare-forensic: 3-forensic/Makefile
+export-forensic: 3-forensic/Makefile
 	make -C 3-forensic export
 
-insert-steg: 2-stegano/export/export.tgz tmp/vm.pid
-	scp -F res/ssh_config 2-stegano/export/export.tgz "rdash@${GUESTIP}:/home/rdash/"
-	ssh -F res/ssh_config "rdash@${GUESTIP}" tar xvf export.tgz
-	ssh -F res/ssh_config "rdash@${GUESTIP}" mv wallpaper.png Pictures/Wallpapers/
-	ssh -F res/ssh_config "rdash@${GUESTIP}" mv flag.gpg .flag.gpg
-	ssh -F res/ssh_config "root@${GUESTIP}" mv /home/rdash/hide /usr/local/bin/
-	ssh -F res/ssh_config "rdash@${GUESTIP}" shred -u export.tgz
-
-insert-forensic: 3-forensic/export/cryptolock tmp/vm.pid
-	scp -F res/ssh_config 3-forensic/export/cryptolock "gru@${GUESTIP}:/tmp/"
-	ssh -F res/ssh_config "gru@${GUESTIP}" chmod +x /tmp/cryptolock
-	# Run in background.
-	ssh -nf -F res/ssh_config "gru@${GUESTIP}" /tmp/cryptolock -e
-	# Get back the key from the malware.
-	nc -l -p 54321 > tmp/key
+run-cryptolock: tmp/qemu.pid
+	bin/run-cryptolock
 
 clear-vm:
 	echo "TODO: Delete history..."
 
-migrate: tmp/vm.pid
-	nc -l -p 5555 | dd of=tmp/migration.img & \
-	nc 127.0.0.1 "${QEMU_MONITOR}" <<< "migrate -b tcp:localhost:5555"; \
-	wait;
+migrate: tmp/qemu.pid run-cryptolock
+	bin/migrate
 
-capture: tmp/migration.img
+capture: tmp/migration.qemu
 	mkdir -p export
-	# 100 MiB buffer.
-	sudo -b tcpdump -B 102400 -n -i lo -w export/capture.pcap -Z "$(whoami)" "port 4444"
-	pidof -s tcpdump > tmp/tcpdump.pid
-	nc -l -p 4444 | dd of=/dev/null & \
-	pv -L "5m" tmp/migration.img | nc localhost 4444; \
-	wait;
-	sudo kill "$$(cat tmp/tcpdump.pid)"
+	bin/capture
 
 stop-vm:
-	nc 127.0.0.1 "${QEMU_MONITOR}" <<< "system_powerdown"
-	sleep 5
-	-nc 127.0.0.1 "${QEMU_MONITOR}" <<< "quit"
+	bin/stop-vm
 
 check:
 	echo "TODO: Extract migration from capture."
 
 clean:
-	rm -rf tmp
 	make -C 2-stegano/ clean
 	make -C 3-forensic/ clean
+	rm tmp/ -rf
 
 clean-all: clean
 	make -C 2-stegano/ clean-all
 	make -C 3-forensic/ clean-all
+	rm export/ -rf
 
-.PHONY: all export prepare-vm start-vm populate-vm prepare-steg prepare-forensic insert-steg clear-vm insert-forensic migrate capture check clean clean-all
+# .PHONY: export prepare-vm start-vm populate-vm prepare-steg prepare-forensic insert-steg clear-vm insert-forensic migrate capture check clean clean-all

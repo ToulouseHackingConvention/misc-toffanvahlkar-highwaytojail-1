@@ -1,0 +1,27 @@
+#!/bin/bash
+
+readonly DEST="export"
+if [[ ! -d "$DEST" ]]; then
+    1>&2 echo "Directory $DEST does not exist, exiting..."
+    exit 127
+fi
+
+readonly PORT=4444
+readonly BUFFER=102400 # 100MiB buffer
+
+# Capture on PORT.
+sudo -b tcpdump -B "$BUFFER" -n -i lo -w "${DEST}/migration.pcap" -Z "$USER" "port $PORT"
+sleep 2
+
+
+# Listen on PORT.
+# nc -l -p "$PORT" > /dev/null &
+# sleep 1
+# Send on PORT. Slow down to do not overflow the capture
+# pv -L "3m" tmp/migration.qemu | nc localhost "$PORT"
+pv -L "3m" tmp/migration.qemu | nc -l -p "$PORT" &
+sleep 1
+nc localhost "$PORT" > /dev/null
+
+# Wait for the end of the migration and stop capture
+sudo killall tcpdump

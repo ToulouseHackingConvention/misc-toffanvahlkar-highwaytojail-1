@@ -1,0 +1,11 @@
+#!/bin/bash
+
+readonly QEMU_MONITOR=5200
+
+# Shutdown the VM ...
+nc localhost "$QEMU_MONITOR" <<< "system_powerdown"
+rm tmp/qemu.pid
+sleep 5
+
+# ... and stop the hypervisor
+nc localhost "$QEMU_MONITOR" <<< "quit"

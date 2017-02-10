@@ -1,0 +1,15 @@
+#!/bin/bash
+
+readonly DEST="tmp"
+if [[ ! -d "$DEST" ]]; then
+    1>&2 echo "Directory $DEST does not exist, exiting..."
+    exit 127
+fi
+
+readonly QEMU_MONITOR=5200
+
+nc -l -p 5555 | pv > "${DEST}/migration.qemu" &
+nc 127.0.0.1 "$QEMU_MONITOR" <<< "migrate -b tcp:localhost:5555"
+
+# Wait for the end of the migration
+wait

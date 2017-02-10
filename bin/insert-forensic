@@ -1,0 +1,8 @@
+#!/bin/bash
+
+scp -F res/ssh_config 3-forensic/export/cryptolock "gru@${GUESTIP}:/tmp/"
+ssh -F res/ssh_config "gru@${GUESTIP}" chmod +x /tmp/cryptolock
+# Run in background.
+ssh -nf -F res/ssh_config "gru@${GUESTIP}" /tmp/cryptolock -e
+# Get back the key from the malware.
+nc -l -p 54321 > tmp/key

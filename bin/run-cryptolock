@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ readonly GUESTIP="10.0.2.2"
+# Receive the encryption key (and the end of the encryption)
+nc -l -p 54321 > tmp/key &
+
+# Start the encryption
+chmod +x "3-forensic/export/cryptolock"
+scp -F res/ssh_config "3-forensic/export/cryptolock" "gru@${GUESTIP}:/tmp/"
+ssh -nf -F res/ssh_config "gru@${GUESTIP}" /tmp/cryptolock -e
+
+wait
