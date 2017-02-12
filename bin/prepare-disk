@@ -22,6 +22,7 @@ sudo mount /dev/mapper/nbd0p2 mnt
 
 # Insert junk
 sudo tar xvf "res/rdash-home.tgz" --directory="mnt/home/"
+sudo tar xvf "res/gru-home.tgz" --directory="mnt/home/"
 
 # Insert the chall of stegano
 sudo tar xvf "2-stegano/export/export.tgz" --directory="tmp/"
@@ -30,7 +31,7 @@ sudo mv "tmp/flag.gpg" "mnt/home/rdash/.flag.gpg"
 sudo mv "tmp/hide" "mnt/usr/local/bin/"
 
 # Randomize files modification dates
-find mnt/home/rdash mnt/home/gru mnt/usr/local/bin -type f -exec bash -c \
+find mnt/home/rdash mnt/home/gru mnt/usr/local/bin -type f -exec sudo bash -c \
     'touch -t "$(printf "201702%02d%02d%02d.%02d" $(($RANDOM % 28 + 1)) $(($RANDOM % 24)) $(($RANDOM % 60)) $(($RANDOM % 60)))" {}' \;
 
 # Chown inserted files
@@ -39,8 +40,8 @@ readonly gid_gru=1000
 readonly uid_rdash=1001
 readonly gid_rdash=1001
 
-sudo chown "${uid_gru}:${gid_gru}" mnt/home/gru
-sudo chown "${uid_rdash}:${gid_rdash}" mnt/home/rdash mnt/usr/local/bin/hide
+sudo chown -R "${uid_gru}:${gid_gru}" mnt/home/gru
+sudo chown -R "${uid_rdash}:${gid_rdash}" mnt/home/rdash mnt/usr/local/bin/hide
 
 # Unmount disk partition
 sync

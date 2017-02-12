@@ -60,17 +60,17 @@ capture: tmp/migration.qemu
 stop-vm:
 	bin/stop-vm
 
-check:
-	echo "TODO: Extract migration from capture."
+check: export/capture.pcap
+	tcpflow -a -r $< -o /tmp/flow/
 
 clean:
 	make -C 2-stegano/ clean
 	make -C 3-forensic/ clean
-	rm tmp/ -rf
+	rm -rf tmp/
 
 clean-all: clean
 	make -C 2-stegano/ clean-all
 	make -C 3-forensic/ clean-all
-	rm export/ -rf
+	rm -rf export/
 
 # .PHONY: export prepare-vm start-vm populate-vm prepare-steg prepare-forensic insert-steg clear-vm insert-forensic migrate capture check clean clean-all

@@ -10,7 +10,7 @@ readonly PORT=4444
 readonly BUFFER=102400 # 100MiB buffer
 
 # Capture on PORT.
-sudo -b tcpdump -B "$BUFFER" -n -i lo -w "${DEST}/migration.pcap" -Z "$USER" "port $PORT"
+sudo -b tcpdump -B "$BUFFER" -n -i lo -w "${DEST}/capture.pcap" -Z "$USER" "port $PORT"
 sleep 2
 
 
