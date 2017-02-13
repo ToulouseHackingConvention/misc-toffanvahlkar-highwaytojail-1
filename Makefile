@@ -55,7 +55,8 @@ migrate: tmp/qemu.pid run-cryptolock
 
 capture: tmp/migration.qemu
 	mkdir -p export
-	bin/capture
+	echo "Please do the capture and don't forget to stop the VM."
+	#bin/capture
 
 stop-vm:
 	bin/stop-vm
