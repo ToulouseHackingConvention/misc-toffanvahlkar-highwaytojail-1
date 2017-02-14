@@ -1,47 +1,45 @@
 #!/bin/bash
 
-readonly BASE_DISK="res/allnightlong.qcow2"
+readonly USERNAME=me
+
+readonly BASE_DISK="res/severus.qcow2"
 readonly DEST="tmp"
 if [[ ! -d "$DEST" ]]; then
     1>&2 echo "Directory $DEST does not exist, exiting..."
     exit 127
 fi
 
-qemu-img create -f qcow2 -b "../$BASE_DISK" "${DEST}/allnightlong-work.qcow2"
+qemu-img create -f qcow2 -b "../$BASE_DISK" "${DEST}/severus-work.qcow2"
 mkdir -p mnt
-
 
 ###   ROOT PART   ##############################################################
 set -x -e
 # Mount disk partition
 sudo modprobe nbd
-sudo qemu-nbd -c /dev/nbd0 "${DEST}/allnightlong-work.qcow2"
+sudo qemu-nbd -c /dev/nbd0 "${DEST}/severus-work.qcow2"
 sudo kpartx -a -v /dev/nbd0
 sleep 0.5
 sudo mount /dev/mapper/nbd0p2 mnt
 
 # Insert junk
-sudo tar xvf "res/rdash-home.tgz" --directory="mnt/home/"
-sudo tar xvf "res/gru-home.tgz" --directory="mnt/home/"
+sudo tar xvf "res/home.tgz" --directory="mnt/home/"
 
 # Insert the chall of stegano
-sudo tar xvf "2-stegano/export/export.tgz" --directory="tmp/"
-sudo mv "tmp/wallpaper.png" "mnt/home/rdash/Pictures/Wallpapers/"
-sudo mv "tmp/flag.gpg" "mnt/home/rdash/.flag.gpg"
+tar xvf "2-stegano/export/export.tgz" --directory="tmp/"
+sudo mv "tmp/wallpaper.png" "mnt/home/${USERNAME}/Pictures/Wallpapers/"
+sudo mv "tmp/flag.gpg" "mnt/home/${USERNAME}/.flag.gpg"
 sudo mv "tmp/hide" "mnt/usr/local/bin/"
 
+# TODO: Insert the flag of forensic.
+
 # Randomize files modification dates
-find mnt/home/rdash mnt/home/gru mnt/usr/local/bin -type f -exec sudo bash -c \
+find "mnt/home/${USERNAME}" mnt/usr/local/bin -type f -exec sudo bash -c \
     'touch -t "$(printf "201702%02d%02d%02d.%02d" $(($RANDOM % 28 + 1)) $(($RANDOM % 24)) $(($RANDOM % 60)) $(($RANDOM % 60)))" {}' \;
 
 # Chown inserted files
-readonly uid_gru=1000
-readonly gid_gru=1000
-readonly uid_rdash=1001
-readonly gid_rdash=1001
-
-sudo chown -R "${uid_gru}:${gid_gru}" mnt/home/gru
-sudo chown -R "${uid_rdash}:${gid_rdash}" mnt/home/rdash mnt/usr/local/bin/hide
+readonly uid=1000
+readonly gid=1000
+sudo chown -R "${uid}:${gid}" "mnt/home/${USERNAME}" mnt/usr/local/bin/hide
 
 # Unmount disk partition
 sync

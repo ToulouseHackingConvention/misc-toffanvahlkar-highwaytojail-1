@@ -6,13 +6,14 @@ GUESTIP=10.0.2.2
 readonly IFVIRT=tap0
 readonly QEMU_MONITOR=5200
 readonly QEMU_SERIAL=5201
-readonly DISK="tmp/allnightlong-work.qcow2"
+readonly DISK="tmp/severus-work.qcow2"
+readonly RAM=256M
 
 sudo -b qemu-system-x86_64 -enable-kvm \
     -nographic \
     -machine "pc-i440fx-2.8" \
     -cpu "qemu64" \
-    -m size=128M \
+    -m "size=$RAM" \
     -hda "$DISK" \
     -monitor "tcp:127.0.0.1:${QEMU_MONITOR},server,nowait" \
     -serial "tcp:127.0.0.1:${QEMU_SERIAL},server,nowait" \

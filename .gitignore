@@ -1,8 +1,7 @@
 *.swp
-*.qcow2
 *.iso
+*.qcow2
+*.gz
+*.tgz
 tmp/
 export/
-res/rdash-home.tgz
-res/gru-home.tgz
-res/allnightlong.qcow2.gz

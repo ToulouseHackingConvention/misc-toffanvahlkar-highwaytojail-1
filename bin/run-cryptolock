@@ -1,14 +1,20 @@
 #!/bin/bash
 
+readonly USERNAME="me"
 readonly GUESTIP="10.0.2.2"
+readonly PORT="54321"
 
 # Start the encryption
 chmod +x "3-forensic/export/cryptolock"
-scp -F res/ssh_config "3-forensic/export/cryptolock" "gru@${GUESTIP}:/tmp/"
-ssh -nf -F res/ssh_config "gru@${GUESTIP}" /tmp/cryptolock -e
+scp -F res/ssh_config "3-forensic/export/cryptolock" "${USERNAME}@${GUESTIP}:/tmp/"
+ssh -nf -F res/ssh_config "${USERNAME}@${GUESTIP}" /tmp/cryptolock -e
 
 sleep 10
 
 # Receive the encryption key (and the end of the encryption)
-nc "${GUESTIP}" 54321 > tmp/key
+while ! nc "${GUESTIP}" "${PORT}" > tmp/key; do
+    echo "Waiting for ${GUESTIP} on ${PORT}..."
+    sleep 5
+done
+echo "Key downloaded in tmp/key."
 

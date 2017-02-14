@@ -1,22 +1,8 @@
-# IF_WLAN=wlo1
-# IF_ETH=enp3s0
-# export IFPHYS="${IF_ETH}"
-# export IFVIRT=tap0
-
-# Guest IP is set in the virtual machine, so don't change the network configuration.
-IFVIRT=tap0
-HOSTIP=10.0.2.1
-GUESTIP=10.0.2.2
-
-QEMU_MONITOR=5200
-QEMU_SERIAL=5201
-
 all: export
-
 
 ###   Files and dependencies.   ################################################
 
-tmp/allnightlong-work.qcow2: prepare-disk
+tmp/severus-work.qcow2: prepare-disk
 
 tmp/qemu.pid: start-vm
 
@@ -31,11 +17,11 @@ tmp/migration.qemu: migrate
 
 export: capture
 
-prepare-disk: res/allnightlong.qcow2 2-stegano/export/export.tgz 3-forensic/export/cryptolock
+prepare-disk: res/severus.qcow2 2-stegano/export/export.tgz
 	mkdir -p tmp
 	bin/prepare-disk
 
-start-vm: tmp/allnightlong-work.qcow2
+start-vm: tmp/severus-work.qcow2
 	bin/start-vm
 
 export-stegano: 2-stegano/Makefile
@@ -44,19 +30,15 @@ export-stegano: 2-stegano/Makefile
 export-forensic: 3-forensic/Makefile
 	make -C 3-forensic export
 
-run-cryptolock: tmp/qemu.pid
+run-cryptolock: tmp/qemu.pid 3-forensic/export/cryptolock
 	bin/run-cryptolock
-
-clear-vm:
-	echo "TODO: Delete history..."
 
 migrate: tmp/qemu.pid run-cryptolock
 	bin/migrate
 
 capture: tmp/migration.qemu
 	mkdir -p export
-	echo "Please do the capture and don't forget to stop the VM."
-	#bin/capture
+	bin/capture
 
 stop-vm:
 	bin/stop-vm
@@ -74,4 +56,4 @@ clean-all: clean
 	make -C 3-forensic/ clean-all
 	rm -rf export/
 
-# .PHONY: export prepare-vm start-vm populate-vm prepare-steg prepare-forensic insert-steg clear-vm insert-forensic migrate capture check clean clean-all
+# .PHONY: export prepare-disk start-vm export-stegano export-forensic run-cryptolock migrate capture stop-vm check clean clean-all

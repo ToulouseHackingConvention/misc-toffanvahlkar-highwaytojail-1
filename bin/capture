@@ -1,27 +1,34 @@
 #!/bin/bash
 
+IF_PHYS=enp3s0
+
 readonly DEST="export"
 if [[ ! -d "$DEST" ]]; then
     1>&2 echo "Directory $DEST does not exist, exiting..."
     exit 127
 fi
+readonly MIGRATION="tmp/migration.qemu"
+if [[ ! -e "$MIGRATION" ]]; then
+    1>&2 echo "File $MIGRATION does not exist, exiting..."
+    exit 127
+fi
 
 readonly PORT=4444
-readonly BUFFER=102400 # 100MiB buffer
+readonly BUFFER=409600 # 400MiB buffer
 
+read -p "Please enter the name/ip of the peer you wish to send the migration: " PEER
+echo "Sending migration to $PEER on port $PORT"
+pv "$MIGRATION" | nc "$PEER" "$PORT"
+
+echo "Done. Launching capture on port $PORT."
 # Capture on PORT.
-sudo -b tcpdump -B "$BUFFER" -n -i lo -w "${DEST}/capture.pcap" -Z "$USER" "port $PORT"
+sudo -b tcpdump -B "$BUFFER" -n -i "$IF_PHYS" -w "${DEST}/capture.pcap" -Z "$USER" "port $PORT"
 sleep 2
 
-
-# Listen on PORT.
-# nc -l -p "$PORT" > /dev/null &
-# sleep 1
-# Send on PORT. Slow down to do not overflow the capture
-# pv -L "3m" tmp/migration.qemu | nc localhost "$PORT"
-pv -L "3m" tmp/migration.qemu | nc -l -p "$PORT" &
+echo "Please get the migration back from the peer $PEER. Listening on port $PORT..."
+nc -l "$PORT" | pv -s "$(du "$MIGRATION" | awk '{print $1}')k" > /dev/null
 sleep 1
-nc localhost "$PORT" > /dev/null
+echo "Done. Kill tcpdump..."
 
 # Wait for the end of the migration and stop capture
 sudo killall tcpdump
