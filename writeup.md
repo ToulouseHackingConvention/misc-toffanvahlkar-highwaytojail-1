@@ -7,19 +7,21 @@ TCP entre deux machines (.4.231 et .3.233) dont on va vouloir extraire le
 données.
 
 ```console
-/tmp $ tcpflow -a -r /tmp/capture.pcap -o /tmp/res/
-/tmp $ ls -l /tmp/res
--rw-r--r-- 1 1000 1000 2,3G 13 févr. 12:57 migration.qemu
-...
-/tmp $ file /tmp/res/migration.qemu
-res/migration.qemu: QEMU suspend to disk image
+/tmp $ tcpflow -a -r /tmp/capture.pcap -o /tmp/flow/
+/tmp $ ls -l /tmp/flow
+-rw-r--r-- 1 toffan users 2,3G 2017-02-13 13:02 192.168.003.233.42398-192.168.004.231.04444
+-rw-r--r-- 1 toffan users  16K 2017-02-13 13:05 report.pdf
+-rw-r--r-- 1 toffan users 4,1K 2017-02-13 13:05 report.xml
+/tmp $ file /tmp/flow/192.168.003.233.42398-192.168.004.231.04444
+/tmp/flow/capture.qemu: QEMU suspend to disk image
 ```
 
 On sait donc qu'il s'agit d'une VM qu'il va nous falloir étudier afin d'obtenir
 un maximum d'informations. On commence par lire l'entête de cette image.
 
 ```console
-/tmp $ strings migration.qemu
+/tmp $ mv flow/192.168.003.233.42398-192.168.004.231.04444 capture.qemu
+/tmp $ strings capture.qemu
 QEVM
 pc-i440fx-2.8       # machine
 block
@@ -36,7 +38,7 @@ ide0-hd0    # HDD
 ...         # MBR
 GRUB        # GRUB
 ...
-/tmp $ strings migration.qemu | grep -e "kernel: [    0.000000]"
+/tmp $ strings capture.qemu | grep -e "kernel: [    0.000000]"
 ...
 Feb  9 13:42:15 allnightlong kernel: [    0.000000] Hypervisor detected: KVM
 ...
@@ -52,18 +54,8 @@ Premièrement on crée un disque suffisant pour recevoir les infos. Ici, la
 capture fait environ 2G donc 4G de disque est largement suffisant.
 
 ```console
-/tmp $ qemu-img create -f qcow2 export/incoming.qcow2 4G
-```
+/tmp $ qemu-img create -f qcow2 incoming.qcow2 4G
 
-On lance ensuite l'hyperviseur en attente d'une migration entrante sur le port 4444.
-
-Note: La quantité de mémoire vive est ici celle par défaut dans QEMU, mais on
-pourrait la retrouver avec le swap du disque. Le cpu est inconnu mais celui par
-défaut ("qemu64") fonctionne, de plus à l'aide d'un strings sur migration.qemu
-on peut retrouver la trace dmesg de la VM qui nous donne l'architecture du
-système.
-
-```console
 /tmp $ sudo -b qemu-system-x86_64 -enable-kvm \
     -machine "pc-i440fx-2.8" \
     -m size=128M \
@@ -71,8 +63,17 @@ système.
     -net "nic,model=virtio" \
     -incoming tcp:0:4444
 
-pv /tmp/res/migration.qemu > nc localhost 4444
+pv /tmp/res/capture.qemu > nc localhost 4444
 ```
+
+On lance ensuite l'hyperviseur en attente d'une migration entrante sur le port
+4444.
+
+Note: La quantité de mémoire vive est ici celle par défaut dans QEMU, mais on
+pourrait la retrouver avec le swap du disque. Le cpu est inconnu mais celui par
+défaut ("qemu64") fonctionne, de plus à l'aide d'un strings sur capture.qemu
+on peut retrouver la trace dmesg de la VM qui nous donne l'architecture du
+système.
 
 Une fois ceci fait on dispose d'un VM lancée mais à laquelle on ne peut pas se
 connecter. QEMU premet via son interface monitor, d'accéder à la mémoire
@@ -80,7 +81,7 @@ physique de la VM.
 
 Sauvegarde la RAM dans ram.raw
 ```console
-pmemsave 0 0x8000000 export/ram.raw
+pmemsave 0 0x8000000 ram.raw
 ```
 
 On a aussi accès au disque incoming.qcow2 que l'on peut monter et analyser de
@@ -126,7 +127,7 @@ sa clé SSH...).
 
 Pour redémarrer la VM dans son état d'origine on réutilise le même script que
 précédemment sauf qu'on envoie le fichier `snapshot.qemu` au lieu de
-`migration.qemu`.
+`capture.qemu`.
 
 On peut ensuite se connecter sur les différents utilisateurs de la VM :
 
@@ -152,8 +153,30 @@ On peut donc soit désassembler le programme , soit l'utiliser sur des fichiers
 connus pour savoir comment il cache les informations. On peut donc écrire un
 programme qui extraira les informations du fichier.
 
-```console
-include solving script
+```python
+#!/usr/bin/env python
+
+import sys
+from PIL import Image
+
+filename = sys.argv[1] if len(sys.argv) == 2 else "wallpaper.png"
+img = Image.open(filename).convert('RGB')
+
+MASK = 0x3
+X, Y = img.size[0], 23
+
+secret = []
+for y in range(Y):
+    for x in range(0, X, 3):
+        r, _, _ = img.getpixel((x, y))
+        secret.append(format(r & MASK, '02b'))
+        # secret is a list of 2 bits strings. Ex: ['01', '11', '01', ...]
+
+
+secret = ["".join(secret[i:i + 4]) for i in range(0, len(secret), 4)]
+secret = "".join(chr(int(s, 2)) for s in secret)
+
+print(secret)
 ```
 
 Il reste ensuite à trouver
@@ -177,37 +200,39 @@ illisibles alors qu'il s'agit normalement de vidéos mp4 (d'après l'extension).
 
 On remarque également un programme `cryptolock` en cours d'éxécution, lancé par
 l'utilisateur `gru`. À l'aide d'un `find` on apprend que ce programme est dans
-/tmp.
+`/tmp`.
 
-Après étude du programme (désassemblage, débogueur, reverse...) on comprend que
+Après étude du programme (désassemblage, débugger, reverse...) on comprend que
 celui-ci chiffre les documents de l'utilisateur avec une clé aléatoire de 256
-bits, stockée sur le tas.
+bits, stockée sur le tas, et envoyée sur le réseau.
 
 Un fois la clé obtenue on peut déchiffrer les documents à l'aide du même programme :
 ```console
 /tmp/cryptolock -d keyfile
 ```
 
-Pour retrouver la clé on a plusieurs solutions :
-
- * Payer la rançon aux organisateurs ;-).
- * Déboguer le programme avec GDB (celui-ci est toujours en cours d'exécution).
- * Analyser la RAM de la VM (avec volatility par exemple).
- * ...
+Notre objectif est donc de retrouver cette clé. Pour ce faire, on a plusieurs
+solutions :
+- Payer la rançon aux organisateurs ;-).
+- Déboguer le programme avec GDB (celui-ci est toujours en cours d'exécution).
+- Analyser la RAM de la VM (avec volatility par exemple).
+- ...
 
 #### Analyse mémoire avec volatility
 
 Pour extraire le tas du programme avec volatility :
 
 ```bash
-OUT="out"
-PROCS="$OUT/psaux.txt"
-MAPS="$OUT/proc_maps.txt"
-volatility -f dump --profile=LinuxDebian87x64 linux_psaux > "$PROCS"
-pid=$(grep cryptolock "$PROCS" | cut -d " " -f 1)
-volatility -f dump --profile=LinuxDebian87x64 -p "$pid" linux_proc_maps > "$MAPS"
-heap_base_addr=$(grep heap "$MAPS" | awk '{ print $4 }')
-volatility -f dump --profile=LinuxDebian87x64 -p "$pid" linux_dump_map --vma "${heap_base_addr}" -D "$OUT/"
+/tmp $ # Get the pid of cryptolock (373)
+/tmp $ volatility -f dump --profile=LinuxDebian87x64 linux_psaux | grep cryptolock
+373     1000    1000    /tmp/cryptolock -e
+
+/tmp $ # Get heap location
+/tmp $ volatility -f dump --profile=LinuxDebian87x64 -p 373 linux_proc_maps | grep heap
+0xffff880007636ba0      373 cryptolock           0x0000000001b86000 0x0000000001bc8000 rw-                   0x0      0      0          0 [heap]
+
+/tmp $ # Dump the heap of this process
+/tmp $ volatility -f dump --profile=LinuxDebian87x64 -p 373 linux_dump_map --vma 0x0000000001b86000 -D out/
 ```
 
 Note : Il faut au préalable télécharger ou générer le profil volatility
@@ -238,12 +263,58 @@ Une fois les clés potentielles stockées dans des fichiers (environ une
 centaine) on peut faire un script qui les teste une à une.
 
 ```bash
-for key in $(ls /tmp/key_*)
-do
-    /tmp/cryptolock -d "$key"
-    if [ $? -eq 0 ]
-    then
+for key in /tmp/key_*; do
+    if /tmp/cryptolock -d "$key"; then
         break
     fi
 done
 ```
+
+### Solution avec gdb
+
+En se connectant sur la VM sans la redémarrer on trouve un processus
+`cryptolock` de PID 373. On trouve cet exécutable dans `/tmp/`
+```console
+root@allnightlong:~# ps aux
+...
+gru        373  0.0  2.4  10500  2952 ?        Ss   12:55   0:02 /tmp/cryptolock -e
+...
+root@allnightlong:~# find / -name "cryptolock"
+/tmp/cryptolock
+```
+
+On peut ensuite récupérer le fichier en local et reverser le programme
+```console
+root@allnightlong:~# apt install gdb
+root@allnightlong:~# gdbserver localhost:1111 -attach 373
+
+~ $ gdb /tmp/cryptolock
+gdb-peda$ target remote 10.0.2.2:1111
+```
+
+Après un peu de reverse on remarque que la clé de chiffrement est dans le heap
+et n'est `free()` qu'après le `sleep()`, elle est donc encore présente dans le
+programme. On va donc pouvoir la retrouver dans la pile. Pour cela on regarde on
+cherche dans la pile une adresse pointant vers le heap dont on a l'intervalle
+dans le mapping du processus.
+```console
+root@allnightlong:~# grep "[heap]" /proc/373/maps
+01b86000-01bc8000 rw-p 00000000 00:00 0                                  [heap]
+
+gdb-peda$ context stack 96
+...
+0520| 0x7fff1a38af30 --> 0x1b9f4c0 --> 0xc2972c6a977ddf4c
+...
+gdb-peda$ x/32c 0x1b9f4c0
+0x1b9f4c0:	0x4c	0xdf	0x7d	0x97	0x6a	0x2c	0x97	0xc2
+0x1b9f4c8:	0x6d	0x95	0x94	0x26	0xb0	0x25	0x59	0x65
+0x1b9f4d0:	0x71	0xa	    0x81	0x38	0x55	0xf6	0x65	0x2d
+0x1b9f4d8:	0xd	    0xc3	0x42	0x44	0xdd	0x7b	0x52	0x4f
+
+root@allnightlong:~# echo '4cdf7d976a2c97c26d959426b0255965710a813855f6652d0dc34244dd7b524f' \
+| xxd -r -p > /tmp/key
+root@allnightlong:~# sudo -u gru /tmp/cryptolock -d /tmp/key
+```
+
+On récupère ainsi le home de `gru` et le flag présent à la fin de la vidéo
+`Carte_Kiwi.mp4`.
