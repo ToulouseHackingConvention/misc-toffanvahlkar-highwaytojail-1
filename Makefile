@@ -47,13 +47,13 @@ check: export/capture.pcap
 	tcpflow -a -r $< -o /tmp/flow/
 
 clean:
-	make -C 2-stegano/ clean
-	make -C 3-forensic/ clean
 	rm -rf tmp/
+	-make -C 2-stegano/ clean
+	-make -C 3-forensic/ clean
 
 clean-all: clean
-	make -C 2-stegano/ clean-all
-	make -C 3-forensic/ clean-all
 	rm -rf export/
+	-make -C 2-stegano/ clean-all
+	-make -C 3-forensic/ clean-all
 
 # .PHONY: export prepare-disk start-vm export-stegano export-forensic run-cryptolock migrate capture stop-vm check clean clean-all
