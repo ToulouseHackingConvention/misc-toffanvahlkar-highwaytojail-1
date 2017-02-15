@@ -1,0 +1,26 @@
+--- Log opened fri. mar. 3 04:43:57 2017
+04:44 -!- severus [~me@81.56.120.12] has joined ##sekissues
+04:44 -!- Irssi: ##sekissues: Total of 15 nicks [2 ops, 0 halfops, 0 voices, 13 normal]
+04:44 -!- Irssi: Join to ##sekissues was synced in 0 secs
+04:44 -!- The topic for ##sekissues is: Dark Channel
+04:44 -!- Topic for ##sekissues set by c0ti
+04:45 < severus> Hi!
+04:45 < Guest45060> Hi, new on the server ?
+04:45 < severus> Yeah, just wanted a bit of help with smthg.
+04:46 < Guest45060> I will need more than that to help you XD
+04:47 < severus> I want to protect some important documents I found some time ago, what do I have to do to secure my system?
+04:47 < Guest45060> Ouch quite a question!
+04:47 < Guest45060> do you have a firewall?
+04:47 < severus> Nope but I think my box does that for me. I only allowed incoming SSH connexion
+04:48 < Guest45060> On port 22?
+04:48 < severus> Probably I didn't touch the configuration.
+04:48 < Guest45060> Thus you probably don't allow root connection. Is your user easy to guess?
+04:49 < severus> Yeah ;-)
+04:51 < Guest45060> Ok and is your passzword secure?
+04:51 < severus> ... :-/
+04:51 < Guest45060> I hope it's not foo, toto, plop, password or sthg like that :D
+04:51 < severus> Almost :D OK I will have to change it I guess.
+04:55 < Guest45060> One last piece of advice, never trust anyone on the web :-P
+04:55 < Guest45060> pwned you, noob :D
+04:55 -!- severus [~me@81.56.120.12] has quit [Kicked (No Reason)]
+--- Log closed fri. mar. 3 14:23:41 2017
