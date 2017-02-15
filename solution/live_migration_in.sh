@@ -13,13 +13,14 @@ QEMU_SERIAL=5201
 
 mkdir -p export
 
-# echo "Create incoming hard drive."
-# qemu-img create -f qcow2 export/incoming.qcow2 2G
+echo "Create incoming hard drive."
+qemu-img create -f qcow2 export/incoming.qcow2 2G
 
 echo "Launch the virtual machine."
 sudo -b qemu-system-x86_64 \
     -enable-kvm \
     -machine "pc-i440fx-2.8" \
+    -m size=256M \
     -hda export/incoming.qcow2 \
     -monitor "tcp:127.0.0.1:${QEMU_MONITOR},server,nowait" \
     -serial "tcp:127.0.0.1:${QEMU_SERIAL},server,nowait" \
@@ -35,8 +36,6 @@ sudo -b qemu-system-x86_64 \
     # -boot once=d \
 
 sleep 2
-
-exit
 
 echo "Waiting for connection on port 4444..."
 pv res/migration.qemu | nc localhost 4444
