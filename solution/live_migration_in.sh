@@ -42,8 +42,9 @@ pv res/migration.qemu | nc localhost 4444
 echo "Migration done! You should be able to use the VM."
 
 echo "Backup the ram into a file (for forensic analysis): export/guest_dump"
-nc 127.0.0.1 "${QEMU_MONITOR}" <<< "pmemsave 0 0x8000000 export/guest_dump"
-sleep 2
+nc 127.0.0.1 "${QEMU_MONITOR}" <<< "pmemsave 0 0x10000000 export/guest_dump"
+sleep 10
+ls -lh "export/guest_dump"
 sudo chown "$USER:$(id -g)" "export/guest_dump"
 
 echo "Save the state of the vm (snapshot): export/snapshot"
