@@ -8,7 +8,7 @@ tmp/qemu.pid: start-vm
 
 tmp/migration.qemu: migrate
 
-2-stegano/export/export.tgz: export-stegano
+2-stegano/export/: export-stegano
 
 3-forensic/export/cryptolock: export-forensic
 
@@ -17,7 +17,7 @@ tmp/migration.qemu: migrate
 
 export: capture
 
-prepare-disk: res/severus.qcow2 2-stegano/export/export.tgz
+prepare-disk: res/severus.qcow2 2-stegano/export/
 	mkdir -p tmp
 	bin/prepare-disk
 

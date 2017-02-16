@@ -25,12 +25,13 @@ sudo mount /dev/mapper/nbd0p2 mnt
 sudo tar xvf "res/home.tgz" --directory="mnt/home/"
 
 # Insert the chall of stegano
-tar xvf "2-stegano/export/export.tgz" --directory="tmp/"
-sudo mv "tmp/wallpaper.png" "mnt/home/${USERNAME}/Pictures/Wallpapers/"
-sudo mv "tmp/flag.gpg" "mnt/home/${USERNAME}/.flag.gpg"
-sudo mv "tmp/hide" "mnt/usr/local/bin/"
+sudo cp "2-stegano/export/wallpaper.png" "mnt/home/${USERNAME}/Pictures/Wallpapers/"
+sudo cp "2-stegano/export/evidences.gpg" "mnt/home/${USERNAME}/"
+sudo cp "2-stegano/export/hide" "mnt/usr/local/bin/"
 
-# TODO: Insert the flag of forensic.
+# Insert the flag of forensic.
+sudo mkdir -p "mnt/home/${USERNAME}/irclogs/freenode/"
+sudo cp "src/*.log" "mnt/home/${USERNAME}/irclogs/freenode/"
 
 # Randomize files modification dates
 find "mnt/home/${USERNAME}" mnt/usr/local/bin -type f -exec sudo bash -c \
