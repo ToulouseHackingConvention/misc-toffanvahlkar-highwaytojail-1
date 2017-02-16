@@ -1,4 +1,4 @@
-all: export
+all: migrate
 
 ###   Files and dependencies.   ################################################
 
