@@ -80,4 +80,5 @@ make clean-all      # supprime les exports et les images docker
 
 ### Tests
 
-Des scripts de solution semi-automatiques sont disponibles dans le dossiers `solution` de chaque dépot.
+Des scripts de solution semi-automatiques sont disponibles dans les dossiers
+`solution` de chaque dépot.
