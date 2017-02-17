@@ -3,5 +3,5 @@
 *.qcow2
 *.gz
 *.tgz
-tmp/
-export/
+tmp
+export
