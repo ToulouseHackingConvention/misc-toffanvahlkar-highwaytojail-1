@@ -44,7 +44,8 @@ stop-vm:
 	bin/stop-vm
 
 check: export/capture.pcap
-	tcpflow -a -r $< -o /tmp/flow/
+	make -C solution capture
+	md5sum -c solution/export/MD5SUMS
 
 clean:
 	rm -rf tmp/

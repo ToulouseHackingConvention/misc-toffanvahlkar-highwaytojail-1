@@ -1,27 +1,31 @@
 #!/bin/bash
-IF_WLAN=wlo1
-IF_ETH=enp3s0
-export IFPHYS="$IF_ETH"
-export IFVIRT=tap0
+
+set -e
 
 # Guest IP is set in the virtual machine, so don't change the network configuration.
 export HOSTIP=10.0.2.1
 export GUESTIP=10.0.2.2
 
-QEMU_MONITOR=5200
-QEMU_SERIAL=5201
+readonly IFVIRT=tap0
+readonly QEMU_MONITOR=5250
+readonly QEMU_SERIAL=5251
 
-mkdir -p export
+readonly disk="export/incoming.qcow2"
 
-echo "Create incoming hard drive."
-qemu-img create -f qcow2 export/incoming.qcow2 2G
+if [ ! -e "$disk" ]; then
+    echo "Create incoming hard drive."
+    set -x
+    qemu-img create -f qcow2 "$disk" 2G
+    set +x
+fi
 
 echo "Launch the virtual machine."
+set -x
 sudo -b qemu-system-x86_64 \
     -enable-kvm \
     -machine "pc-i440fx-2.8" \
     -m size=256M \
-    -hda export/incoming.qcow2 \
+    -hda "$disk" \
     -monitor "tcp:127.0.0.1:${QEMU_MONITOR},server,nowait" \
     -serial "tcp:127.0.0.1:${QEMU_SERIAL},server,nowait" \
     -net "nic,model=virtio" \
@@ -35,10 +39,13 @@ sudo -b qemu-system-x86_64 \
     # -cdrom "$HOME/Documents/ISO/OS/Linux/archlinux/archlinux-2017.01.01-dual.iso" \
     # -boot once=d \
 
+set +x
+
 sleep 2
 
-echo "Waiting for connection on port 4444..."
-pv res/migration.qemu | nc localhost 4444
+echo "Sending migration on port 4444..."
+pv tmp/migration.qemu | nc localhost 4444
+sleep 1
 echo "Migration done! You should be able to use the VM."
 
 echo "Backup the ram into a file (for forensic analysis): export/guest_dump"
@@ -58,6 +65,9 @@ echo "You can also extract some relevant files from the disk export/incoming.qco
 read -p "Press [Enter] key to shut down the virtual machine..."
 
 echo "Shut down the virtual machine."
+nc 127.0.0.1 "${QEMU_MONITOR}" <<< "system_powerdown"
+sleep 5
 nc 127.0.0.1 "${QEMU_MONITOR}" <<< "quit"
-
 sleep 2
+
+set +e

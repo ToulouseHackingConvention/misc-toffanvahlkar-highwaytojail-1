@@ -1,0 +1,37 @@
+#!/bin/bash
+
+readonly RESOURCES="res"
+readonly TMPDIR="tmp"
+readonly EXPORT="export"
+readonly FLOW="${TMPDIR}/flow"
+readonly SUMS="${EXPORT}/MD5SUMS"
+readonly migration="$TMPDIR/migration.qemu"
+
+set -e -x
+
+# Extract network capture content.
+#tshark -T fields -e data -r export/capture.pcap | xxd -r -p | pv > /tmp/migration_tshark.img
+tcpflow -a -r "${RESOURCES}/capture.pcap" -o "$FLOW"
+
+set +x
+
+# Get the list of files found.
+file="$(grep filename "${FLOW}/report.xml" | sed -e 's/^.*<.*>\(.*\)<.*>$/\1/')"
+if [[ "$(echo "$file" | wc -l | awk '{ print $1 }')" != 1 ]]; then
+    echo "Error: Found more than one file in the capture!"
+    echo "$file"
+    exit 127
+fi
+
+# In case there is only one get its checksum.
+md5sum="$(grep hashdigest "${FLOW}/report.xml" | sed -e 's/^.*<.*>\(.*\)<.*>$/\1/')"
+
+rm -f "$migration"
+ln -s "$(echo "$file" | sed -e "s/^${TMPDIR}\///")" "$migration"
+
+echo "One file extracted from capture:"
+echo "$md5sum  $file"
+echo "$md5sum  $migration" > "$SUMS"
+echo "You can run md5sum -c solution/$SUMS to check if correct (from the root folder)."
+
+set +e
