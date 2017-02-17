@@ -26,7 +26,7 @@ sudo tar xvf "res/home.tgz" --directory="mnt/home/"
 
 # Insert the chall of stegano
 sudo cp "2-stegano/export/wallpaper.png" "mnt/home/${USERNAME}/Pictures/Wallpapers/"
-sudo cp "2-stegano/export/evidences" "mnt/home/${USERNAME}/"
+sudo cp "2-stegano/export/evidence" "mnt/home/${USERNAME}/"
 sudo cp "2-stegano/export/hide" "mnt/usr/local/bin/"
 
 # Insert the flag of forensic.
@@ -36,6 +36,8 @@ sudo cp src/*.log "mnt/home/${USERNAME}/irclogs/freenode/"
 # Randomize files modification dates
 find "mnt/home/${USERNAME}" mnt/usr/local/bin -type f -exec sudo bash -c \
     'touch -t "$(printf "201702%02d%02d%02d.%02d" $(($RANDOM % 28 + 1)) $(($RANDOM % 24)) $(($RANDOM % 60)) $(($RANDOM % 60)))" {}' \;
+sudo touch -t 201702151426.41 mnt/home/me/irclogs/freenode/hackcave.log
+sudo touch -t 201703040455.40 mnt/home/me/irclogs/freenode/sekissues.log
 
 # Chown inserted files
 readonly uid=1000
