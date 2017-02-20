@@ -22,7 +22,7 @@ Sur une échelle [Facile, Moyen, Difficile, Hardcore] le chall se situe :
 Service note:
 > The target is a political opponent who has been spotted in demonstrations and
 has been arrested several times for public disturbance and refusal to obey.  In
-the framework of the war on terrorism, this individual has also be put under
+the framework of the war on terrorism, this individual has also been put under
 strengthened surveillance because of his frequent use of cryptography.
 
 > One of our field agents has put a network-capturing device on the desktop
