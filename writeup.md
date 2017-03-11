@@ -1,4 +1,7 @@
-# Write up
+# Write up - Highway to jail
+Challenge & Writeup conçus par Benoit Lemarchand (https://github.com/toffan) et
+Volodia Laniel (https://github.com/vahlkar) pour la [Toulouse Hacking
+Convention](https://toulousehackingconvention.fr/) 2017.
 
 ## 1. Capture Réseau
 
