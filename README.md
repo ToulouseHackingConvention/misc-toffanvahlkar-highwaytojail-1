@@ -7,7 +7,19 @@
 ### Nom de production
 Highway to jail - part. 1
 
-### Descripion du challenge / Difficulté
+Challenge disponible sur :
+
+https://www.bde.enseeiht.fr/~lanielv/THC2K17_highwaytojail/capture.pcap.gz
+```console
+f4229f436fd745a17e32ff2dd988b1e8e5e1dff6a79d69f2c314bf5e43b257c1  capture.pcap
+```
+
+Writeup des auteurs disponible sur :
+
+https://github.com/ToulouseHackingConvention/misc-toffanvahlkar-highwaytojail-1/blob/master/writeup.md
+
+
+### Description du challenge / Difficulté
 
 Ce challenge se compose de deux parties.
 La première partie est une épreuve d'analyse forensique.
@@ -54,13 +66,22 @@ Dans le fichier de log `src/hackcave.log` le topic du salon IRC est le flag.
 Il faut ensuite faire un `make clean && make migrate` puis refaire la capture
 réseau.
 
+### Pré requis
+Au préalable il faut récupérer les ressources non versionnées du dossier `res` sur :
+
+https://www.bde.enseeiht.fr/~lanielv/THC2K17_highwaytojail/res/
+
+Le SHA256SUM est versionné sur le dépot. Il faut extraire severus.qcow2.gz.
+
+Liste non nécessairement exhaustive de dépendances : docker, qemu, kpartx, qemu-nbd, qemu-img, gcc, sfml...
+
 ### Usage
 
 `make migrate` puis il faut effectuer la capture réseau à la main, c'est à dire
 envoyer le fichier tmp/migration.qemu a un autre hôte qui écoute sur le port
 4444 et qui fait la capture avec tcpdump (commande dans `bin/capture`). La
 capture ne doit pas être effectuée sur l'interface locale ! Si tcpdump indique
-que le kernel a laché des paquets il faut recommencer avec un buffer plus
+que le kernel a lâché des paquets il faut recommencer avec un buffer plus
 grand.
 
 ```bash
@@ -81,4 +102,4 @@ make clean-all      # supprime les exports et les images docker
 ### Tests
 
 Des scripts de solution semi-automatiques sont disponibles dans les dossiers
-`solution` de chaque dépot.
+`solution` de chaque dépôt.
